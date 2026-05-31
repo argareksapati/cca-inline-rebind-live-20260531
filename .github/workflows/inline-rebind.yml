@@ -1,0 +1,43 @@
+name: Inline Rebind Proof
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run claude-code-action on snapshot A
+        id: claude
+        uses: anthropics/claude-code-action@c5c315c8a1080dbacfe5cee8ce7817b6865689f0
+        with:
+          github_token: ${{ github.token }}
+          anthropic_api_key: dummy-nonempty-key
+          track_progress: true
+          path_to_claude_code_executable: ${{ github.workspace }}/.github/scripts/fake-claude-inline-rebind.mjs
+          claude_args: --allowedTools "mcp__github_inline_comment__create_inline_comment"
+          show_full_output: true
+
+      - name: Dump live review comments
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments > review-comments.json
+          cat review-comments.json
+
+      - name: Dump fake CLI proof
+        if: always()
+        run: |
+          find "$RUNNER_TEMP" -maxdepth 1 -type f | sort
+          if [ -f "$RUNNER_TEMP/inline-rebind-proof.txt" ]; then
+            cat "$RUNNER_TEMP/inline-rebind-proof.txt"
+          fi
