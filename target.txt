@@ -1,3 +1,3 @@
 keep-1
-A_ONLY_snapshot_A
+B_ONLY_live_head_B
 keep-3
